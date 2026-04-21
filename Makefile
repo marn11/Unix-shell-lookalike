@@ -17,19 +17,29 @@ CC = cc
 
 FLAG = -Wall -Wextra -Werror
 
-READLINE_L = $(shell brew --prefix readline)/lib
+UNAME_S := $(shell uname -s)
+BREW := $(shell command -v brew 2>/dev/null)
 
-READLINE_I = $(shell brew --prefix readline)/include
+ifeq ($(BREW),)
+	READLINE_L =
+	READLINE_I =
+	READLINE_FLAGS = -lreadline
+else
+	READLINE_PREFIX := $(shell brew --prefix readline)
+	READLINE_L = $(READLINE_PREFIX)/lib
+	READLINE_I = $(READLINE_PREFIX)/include
+	READLINE_FLAGS = -L $(READLINE_L) -I $(READLINE_I) -lreadline
+endif
 
 all: $(NAME)
 
 obj/%.o: %.c $(HEADER)
 	@mkdir -p $(dir $@)
-	@($(CC) $(FLAG) -I $(READLINE_I) -c $< -o $@)
+	@($(CC) $(FLAG) $(if $(READLINE_I),-I $(READLINE_I)) -c $< -o $@)
 	@printf "\rcompiling...\033[K"
 
 $(NAME): $(OBJ)
-	@($(CC) -lreadline $(FLAG) $(OBJ) -o $(NAME) -L $(READLINE_L))
+	@($(CC) $(FLAG) $(OBJ) -o $(NAME) $(READLINE_FLAGS))
 	@printf "\r\033[K\033[33mminishell compiled\033[0m\n"
 
 clean:
